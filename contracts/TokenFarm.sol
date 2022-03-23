@@ -1,82 +1,124 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./Token1.sol";
-import "./Token2.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./StakingToken.sol";
+import "./RewardToken.sol";
 
 contract TokenFarm {		
 	string public name = "Colin Token Farm";
 	address public owner;
-	Token1 public token1;
-	Token2 public token2;	
+	StakingToken public stakingToken;
+	RewardToken public rewardToken;	
 
 	address[] public stakers;
 
     // staker address to balance mapping
 	mapping(address => uint) public stakingBalance;
 
-    // staker staking state
-	mapping(address => bool) public hasStaked;
-
 	mapping(address => bool) public isStaking;
 
-	constructor(Token1 _token1, Token2 _token2) public {
-		token1 = _token1;
-		token2 = _token2;
+	// userAddress => timeStamp
+    mapping(address => uint256) public startTime;
+
+	// userAddress => rewardTokenBalance
+    mapping(address => uint256) public rewardTokenBalance;
+
+	// event to emit when stake/unstake/yieldwithdraw
+    event Stake(address indexed from, uint256 amount);
+    event Unstake(address indexed from, uint256 amount);
+    event YieldWithdraw(address indexed to, uint256 amount);
+    event ConsoleLog(address indexed from, string message);
+
+	constructor(StakingToken _stakingToken, RewardToken _rewardToken) public {
+		stakingToken = _stakingToken;
+		rewardToken = _rewardToken;
 		owner = msg.sender;
 	}
 
     // stake/deposit token
-	function stakeTokens(uint _amount) public {			
-		// approve transfer
-        token2.approve(msg.sender, _amount);	
-		// transfer token2 to this contract for staking
-		token2.transferFrom(msg.sender, address(this), _amount);
+	function stakeTokens(uint _amount) public {
+
+		require(
+            _amount > 0 &&
+            stakingToken.balanceOf(msg.sender) >= _amount, 
+            "You cannot stake zero tokens");
+
+		if(isStaking[msg.sender] == true){
+            emit ConsoleLog(msg.sender, "sender is staking!");
+            uint256 toTransfer = calculateYieldTotal(msg.sender);
+            rewardTokenBalance[msg.sender] += toTransfer;
+        }
+
+		// transfer staking token from sender to this contract
+		stakingToken.transferFrom(msg.sender, address(this), _amount);
 
 		// update staking balance
-		stakingBalance[msg.sender] = stakingBalance[msg.sender] + _amount;		
+		stakingBalance[msg.sender] = stakingBalance[msg.sender] + _amount;
 
-		// right now contract only allow 1 stake per user.
-		if(!hasStaked[msg.sender]) {
-			stakers.push(msg.sender);
-		}
+		startTime[msg.sender] = block.timestamp;		
 
 		// update stakng status
 		isStaking[msg.sender] = true;
-		hasStaked[msg.sender] = true;
+		emit Stake(msg.sender, _amount);
 	}
 
 	// unstake/withdraw
-	function unstakeTokens() public {
-		// fetch staking balance
-		uint balance = stakingBalance[msg.sender];
+	function unstakeTokens(uint256 _amount) public {
 
-		// require amount greter than 0
-		require(balance > 0, "no stake token found");
+		require(
+            isStaking[msg.sender] = true &&
+            stakingBalance[msg.sender] >= _amount, 
+            "Nothing to unstake"
+        );
 
-		// transfer Mock Dai tokens to this contract for staking
-		token2.transfer(msg.sender, balance);
-
-		// reset staking balance
-		stakingBalance[msg.sender] = 0;
-
-		// update staking status
-		isStaking[msg.sender] = false;
+		uint256 yieldTransfer = calculateYieldTotal(msg.sender);
+        startTime[msg.sender] = block.timestamp;
+        uint256 balTransfer = _amount;
+        _amount = 0;
+        stakingBalance[msg.sender] -= balTransfer;
+        stakingToken.transfer(msg.sender, balTransfer);
+        rewardTokenBalance[msg.sender] += yieldTransfer;
+        if(stakingBalance[msg.sender] == 0){
+            isStaking[msg.sender] = false;
+        }
+        emit Unstake(msg.sender, balTransfer);
 	}
 
 
-	function rewardTokens() public {
-		// only owner can call this function
-		require(msg.sender == owner, "caller must be the owner");
+    function withdrawYield() public {
+        uint256 toTransfer = calculateYieldTotal(msg.sender);
 
-		// issue tokens to all stakers
-		for (uint i=0; i<stakers.length; i++) {
-			address recipient = stakers[i];
-			uint balance = stakingBalance[recipient];
-			if(balance > 0) {
-				token1.transfer(recipient, balance);
-			}			
-		}
-	}
+        require(
+            toTransfer > 0 ||
+            rewardTokenBalance[msg.sender] > 0,
+            "Nothing to withdraw"
+            );
+            
+        if(rewardTokenBalance[msg.sender] != 0){
+            uint256 oldBalance = rewardTokenBalance[msg.sender];
+            rewardTokenBalance[msg.sender] = 0;
+            toTransfer += oldBalance;
+        }
 
+        startTime[msg.sender] = block.timestamp;
+		// mint new token for user
+        rewardToken.mint(msg.sender, toTransfer);
+        emit YieldWithdraw(msg.sender, toTransfer);
+    } 
+
+	function calculateYieldTime(address user) public view returns(uint256) {
+        uint256 end = block.timestamp;
+        uint256 totalTime = end - startTime[user];
+        return totalTime;
+    }
+
+    // 86400 represents the number of seconds in a day. Having it to be 86400 it will equate to 100% return rate in 24 hours.
+	function calculateYieldTotal(address user) public view returns(uint256) {
+        uint256 time = calculateYieldTime(user) * 10**18;
+        uint256 rate = 86400;
+        uint256 timeRate = time / rate;
+        uint256 rawYield = (stakingBalance[user] * timeRate) / 10**18;
+        return rawYield;
+    } 
 }

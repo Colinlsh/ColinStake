@@ -46,7 +46,7 @@ module.exports = {
     development: {
       host: "127.0.0.1", // Localhost (default: none)
       port: 7545, // Standard Ethereum port (default: none)
-      network_id: "*", // Any network (default: none)
+      network_id: "5777", // Any network (default: none)
     },
     // Another network with more advanced options...
     // advanced: {
@@ -59,22 +59,22 @@ module.exports = {
     // },
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
-    rinkeby: {
-      provider: () =>
-        new HDWalletProvider({
-          privateKeys: [
-            process.env.REACT_APP_PRIVATE_KEY_1,
-            process.env.REACT_APP_PRIVATE_KEY_2,
-          ],
-          providerOrUrl: process.env.REACT_APP_INFURA_API_URL,
-          numberOfAddresses: 2,
-        }),
-      network_id: 4,
-      gas: 8800000,
-      confirmations: 2,
-      timeoutBlocks: 200,
-      skipDryRun: true,
-    },
+    // rinkeby: {
+    //   provider: () =>
+    //     new HDWalletProvider({
+    //       privateKeys: [
+    //         process.env.REACT_APP_PRIVATE_KEY_1,
+    //         process.env.REACT_APP_PRIVATE_KEY_2,
+    //       ],
+    //       providerOrUrl: process.env.REACT_APP_INFURA_API_URL,
+    //       numberOfAddresses: 2,
+    //     }),
+    //   network_id: 4,
+    //   gas: 8800000,
+    //   confirmations: 2,
+    //   timeoutBlocks: 200,
+    //   skipDryRun: true,
+    // },
     // ropsten: {
     // provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/YOUR-PROJECT-ID`),
     // network_id: 3,       // Ropsten's id
