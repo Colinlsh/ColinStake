@@ -6,7 +6,7 @@ import "./StakingToken.sol";
 import "./RewardToken.sol";
 
 contract TokenFarm {		
-	string public name = "Colin Token Farm";
+	string public name = "TokenFarm";
 	address public owner;
 	StakingToken public stakingToken;
 	RewardToken public rewardToken;	
@@ -30,7 +30,7 @@ contract TokenFarm {
     event YieldWithdraw(address indexed to, uint256 amount);
     event ConsoleLog(address indexed from, string message);
 
-	constructor(StakingToken _stakingToken, RewardToken _rewardToken) public {
+	constructor(StakingToken _stakingToken, RewardToken _rewardToken) {
 		stakingToken = _stakingToken;
 		rewardToken = _rewardToken;
 		owner = msg.sender;
@@ -107,14 +107,14 @@ contract TokenFarm {
         emit YieldWithdraw(msg.sender, toTransfer);
     } 
 
-	function calculateYieldTime(address user) public view returns(uint256) {
+	function calculateYieldTime(address user) internal view returns(uint256) {
         uint256 end = block.timestamp;
         uint256 totalTime = end - startTime[user];
         return totalTime;
     }
-
+ 
     // 86400 represents the number of seconds in a day. Having it to be 86400 it will equate to 100% return rate in 24 hours.
-	function calculateYieldTotal(address user) public view returns(uint256) {
+	function calculateYieldTotal(address user) internal view returns(uint256) {
         uint256 time = calculateYieldTime(user) * 10**18;
         uint256 rate = 86400;
         uint256 timeRate = time / rate;

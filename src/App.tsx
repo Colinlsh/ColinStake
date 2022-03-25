@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from "react";
-import { web3State } from "./model/blockchain/blockchainModel";
+import { useEffect, useState } from "react";
+import {
+  getContractModel,
+  RewardTokenName,
+  StakingTokenName,
+  TokenFarmName,
+  web3State,
+} from "./model/blockchain/blockchainModel";
 import "./App.css";
 import VideoBackground from "./UI/layout/videoBackground";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  getERC20Contract,
-  getERC721Contract,
-  getERC721TotalSupply,
-  getWeb3,
-} from "./redux/slice/blockchainSlice";
+import { getContract, getWeb3 } from "./redux/slice/blockchainSlice";
 import { RootState } from "./redux/store";
-import { Button, Container, createTheme, CssBaseline } from "@mui/material";
+import { Container, createTheme } from "@mui/material";
 import { ThemeProvider } from "@emotion/react";
 import { ERCContainer } from "./UI/ERCContainer";
 import Navbar from "./UI/Navbar";
-import StakeTokenContainer from "./UI/StakeTokenContainer";
 
 const theme = createTheme();
 
@@ -38,12 +38,19 @@ function App() {
     init();
   }, []);
 
+  useEffect(() => {
+    handleGetContract(RewardTokenName);
+    handleGetContract(StakingTokenName);
+    handleGetContract(TokenFarmName);
+  }, [state.web3]);
+
   const handleGetContract = (contractName: string) => {
-    if (contractName === "erc20") {
-      dispatch(getERC20Contract(state.web3!));
-    } else if (contractName === "erc721") {
-      dispatch(getERC721Contract(state.web3!));
-    }
+    dispatch(
+      getContract({
+        web3: state.web3!,
+        contractName: contractName,
+      } as getContractModel)
+    );
   };
 
   return (
@@ -76,11 +83,16 @@ function App() {
               justifyContent: "center",
             }}
           >
-            <StakeTokenContainer
+            <ERCContainer
+              name={RewardTokenName}
+              isEnable={state.web3 !== undefined}
+              contract={state.RewardToken!}
+            />
+            {/* <StakeTokenContainer
               name="test"
               handleStakeToken={() => {}}
               isEnable={true}
-            />
+            /> */}
             {/* <ERCContainer
               name="ERC20"
               handleGetContract={() => handleGetContract("erc20")}

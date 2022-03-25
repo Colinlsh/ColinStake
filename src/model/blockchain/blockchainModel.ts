@@ -4,33 +4,37 @@ import { Contract } from "web3-eth-contract";
 export interface web3State {
   currentAccount: string;
   web3: Web3 | undefined;
-  ERC20contract: web3Contract | undefined;
-  ERC721contract: web3Contract | undefined;
-  isLoading: boolean;
+  RewardToken: web3Contract | undefined;
+  StakingToken: web3Contract | undefined;
+  TokenFarm: web3Contract | undefined;
 }
 
 export interface web3Contract {
+  name: string;
+  address: string;
   contract: Contract | undefined;
   totalSupply: number;
-}
-
-export interface mintModel {
-  web3: Web3;
-  currentAccount: string;
-  contract: Contract;
-  to: string;
-  amount: string;
-}
-
-export interface burnModel {
-  currentAccount: string;
-  tokenId: string;
-  contract: Contract;
+  isLoading: boolean;
 }
 
 export interface transactionModel {
-  currentAccount: string;
   contract: Contract;
+  from: string;
   to: string;
   tokenId: string;
+  value: any;
 }
+
+export interface getContractModel {
+  web3: Web3;
+  contractName: string;
+}
+
+export interface KeyValuePair {
+  name: string;
+  value: any[];
+}
+
+export const RewardTokenName = "RewardToken";
+export const StakingTokenName = "StakingToken";
+export const TokenFarmName = "TokenFarm";

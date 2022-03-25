@@ -144,10 +144,7 @@ contract("TokenFarm", (accounts) => {
     console.log(
       `Approved ${web3.utils.fromWei(tokensToStake)} from ${staker0}`
     );
-    // let _allowance = await _stakeToken.allowance(staker1, _tokenFarm.address, {
-    //   from: staker1,
-    // });
-    // console.log(`Allowance: ${web3.utils.fromWei(_allowance)}`);
+
     await _tokenFarm.stakeTokens(tokensToStake, {
       from: staker1,
     });
@@ -174,21 +171,6 @@ contract("TokenFarm", (accounts) => {
 
   // test withdraw yield
   it("should unstake tokens and increase reward", async () => {
-    // const tokensToStake = web3.utils.toWei("200", "ether");
-    // await _stakeToken.approve(_tokenFarm.address, tokensToStake, {
-    //   from: staker1,
-    // });
-    // console.log(
-    //   `Approved ${web3.utils.fromWei(tokensToStake)} from ${staker0}`
-    // );
-    // // let _allowance = await _stakeToken.allowance(staker1, _tokenFarm.address, {
-    // //   from: staker1,
-    // // });
-    // // console.log(`Allowance: ${web3.utils.fromWei(_allowance)}`);
-    // await _tokenFarm.stakeTokens(tokensToStake, {
-    //   from: staker1,
-    // });
-
     var _stakeBal = await _tokenFarm.stakingBalance(staker1);
     console.log(`Staker1 Staking balance: ${web3.utils.fromWei(_stakeBal)}`);
     assert(Number(web3.utils.fromWei(_stakeBal)) === 200, "not staking 200");
@@ -210,17 +192,17 @@ contract("TokenFarm", (accounts) => {
     );
   });
 
-  it("should return correct yield time", async () => {
-    // get start time
-    let _starttime = await _tokenFarm.startTime(staker1);
-    let datetime = new Date(_starttime * 1000);
-    let normalDate = new Date(_starttime * 1000).toLocaleString("en-GB", {
-      timeZone: "GMT",
-    });
-    console.log(`Staker1 Staking starttime: ${datetime}`);
-    console.log(`Staker1 Staking starttime: ${normalDate}`);
-    console.log(`Staker1 Staking starttime: ${_starttime}`);
+  // it("should return correct yield time", async () => {
+  //   // get start time
+  //   let _starttime = await _tokenFarm.startTime(staker1);
+  //   let datetime = new Date(_starttime * 1000);
+  //   let normalDate = new Date(_starttime * 1000).toLocaleString("en-GB", {
+  //     timeZone: "GMT",
+  //   });
+  //   console.log(`Staker1 Staking starttime: ${datetime}`);
+  //   console.log(`Staker1 Staking starttime: ${normalDate}`);
+  //   console.log(`Staker1 Staking starttime: ${_starttime}`);
 
-    // calculate stake yield
-  });
+  //   // calculate stake yield
+  // });
 });
