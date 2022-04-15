@@ -48,14 +48,16 @@ export const getWeb3 = createAsyncThunk("blockchain/getWeb3", async () => {
 });
 
 export const getContract = createAsyncThunk(
-  "blockchain/getRewardTokenContract",
+  "blockchain/getContract",
   async (params: getContractModel) => {
     let { web3, contractName } = params;
-    let _conJson = contractObject.filter((x) => x.name === contractName) as any;
+    let _conJson = contractObject.filter(
+      (x) => x.name === contractName
+    )[0] as any;
     let id = await web3.eth.net.getId();
-    let deployedNetwork = _conJson.networks[id];
+    let deployedNetwork = _conJson.value.networks[id];
     let _contract = new web3.eth.Contract(
-      _conJson.abi as AbiItem[],
+      _conJson.value.abi as AbiItem[],
       deployedNetwork && deployedNetwork.address
     );
 
@@ -70,7 +72,7 @@ export const getContractTotalSupply = createAsyncThunk(
   async (contract: Contract) => {
     let num = await contract.methods.totalSupply().call();
     let name = await contract.methods.name().call();
-    return { name: num, value: [name] } as KeyValuePair;
+    return { name: name, value: [num] } as KeyValuePair;
   }
 );
 
@@ -101,7 +103,7 @@ const blockchainSlice: Slice<
 > = createSlice({
   name: "blockchain",
   initialState: {
-    currentAccount: "0x0",
+    currentAccount: "",
     web3: undefined,
     RewardToken: {
       name: RewardTokenName,

@@ -39,10 +39,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    handleGetContract(RewardTokenName);
-    handleGetContract(StakingTokenName);
-    handleGetContract(TokenFarmName);
-  }, [state.web3]);
+    if (state.web3 !== undefined) {
+      handleGetContract(RewardTokenName);
+      handleGetContract(StakingTokenName);
+      handleGetContract(TokenFarmName);
+    }
+  }, [state.web3, state.currentAccount]);
 
   const handleGetContract = (contractName: string) => {
     dispatch(
@@ -87,6 +89,16 @@ function App() {
               name={RewardTokenName}
               isEnable={state.web3 !== undefined}
               contract={state.RewardToken!}
+            />
+            <ERCContainer
+              name={StakingTokenName}
+              isEnable={state.web3 !== undefined}
+              contract={state.StakingToken!}
+            />
+            <ERCContainer
+              name={TokenFarmName}
+              isEnable={state.web3 !== undefined}
+              contract={state.TokenFarm!}
             />
             {/* <StakeTokenContainer
               name="test"
