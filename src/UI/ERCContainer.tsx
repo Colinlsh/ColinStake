@@ -6,6 +6,7 @@ import {
   web3Contract,
 } from "../model/blockchain/blockchainModel";
 import {
+  getAddressTokenCount,
   getContractTotalSupply,
   setIsLoading,
   transferToken,
@@ -31,7 +32,10 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
   // #endregion
 
   const handleTransfer = (to: string, amount: string) => {
-    let from = state.StakingToken!.address;
+    let from = state.currentAccount;
+    dispatch(
+      setIsLoading({ name: contract.name, value: [true] } as KeyValuePair)
+    );
     dispatch(
       transferToken({
         contract: contract.contract!,
@@ -51,21 +55,27 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
   };
 
   useEffect(() => {
-    if (contract.contract !== undefined) {
-      dispatch(getContractTotalSupply(contract.contract!));
-    }
-  }, [contract!.contract]);
-
-  // set loading time out to be 1 second
-  useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (contract!.isLoading) {
-      timer = setTimeout(() => {
-        setIsLoading({ name: contract!.name, value: [true] } as KeyValuePair);
-      }, 1000);
+    if (contract.contract !== undefined && state.currentAccount !== "") {
+      dispatch(
+        setIsLoading({ name: contract.name, value: [true] } as KeyValuePair)
+      );
+      timer = setTimeout(
+        () =>
+          dispatch(
+            getAddressTokenCount({
+              contract: contract.contract!,
+              from: state.currentAccount,
+              to: "",
+              tokenId: "",
+              value: "",
+            })
+          ),
+        1000
+      );
     }
     return () => clearTimeout(timer);
-  }, [contract!.isLoading]);
+  }, [contract!.contract, state.currentAccount]);
 
   return (
     <div
@@ -76,13 +86,23 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
         flexDirection: "column",
         pointerEvents: isEnable ? "auto" : "none",
         opacity: isEnable ? "1" : "0.5",
+        margin: "0 1rem",
       }}
     >
-      <div style={{ fontSize: "4rem" }}>COLIN {name}</div>
+      <div style={{ fontSize: "4rem" }}>{name}</div>
       {contract!.isLoading ? (
-        <CircularProgress />
+        <div
+          style={{
+            height: "5rem",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          <CircularProgress />
+        </div>
       ) : (
-        <div style={{ fontSize: "4rem" }}>{contract.totalSupply}</div>
+        <div style={{ fontSize: "4rem" }}>{contract.currentCount}</div>
       )}
       <TextField
         style={{ background: "aliceblue", marginBottom: "1rem" }}
@@ -95,7 +115,7 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
         style={{ backgroundColor: "aliceblue", width: "100%" }}
       />
       <TextField
-        style={{ background: "aliceblue", marginBottom: "1rem" }}
+        style={{ background: "aliceblue", margin: "1rem 0" }}
         label="Amount"
         variant="filled"
         onChange={(e) => handleAmountChange(e)}

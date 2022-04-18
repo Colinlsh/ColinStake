@@ -76,23 +76,38 @@ export const getContractTotalSupply = createAsyncThunk(
   }
 );
 
+export const getAddressTokenCount = createAsyncThunk(
+  "blockchain/getAddressTokenCount",
+  async (transactionModel: transactionModel) => {
+    let { contract, from, to, tokenId, value } = transactionModel;
+    let num = await contract.methods.balanceOf(from).call();
+    let name = await contract.methods.name().call();
+
+    return { name: name, value: [num] } as KeyValuePair;
+  }
+);
+
 export const transferToken = createAsyncThunk(
   "blockchain/transferToken",
   async (transferModel: transactionModel) => {
     let name = await transferModel.contract.methods.name().call();
     // transfer from token
-    await transferModel.contract.methods.transfer(
-      transferModel.to,
-      Web3.utils.toWei(transferModel.value),
-      {
-        from: transferModel.from,
-      }
-    );
+    await transferModel.contract.methods
+      .transfer(
+        transferModel.to,
+        Web3.utils.toWei(transferModel.value, "ether")
+      )
+      .send({ from: transferModel.from });
+    
     let _totalSupply = await transferModel.contract.methods
       .totalSupply()
       .call();
 
-    return { name: name, value: [_totalSupply] } as KeyValuePair;
+    let _currentCount = await transferModel.contract.methods
+      .balanceOf(transferModel.from)
+      .call();
+
+    return { name: name, value: [_totalSupply, _currentCount] } as KeyValuePair;
   }
 );
 
@@ -110,18 +125,21 @@ const blockchainSlice: Slice<
       contract: undefined,
       totalSupply: 0,
       isLoading: false,
+      currentCount: 0,
     },
     StakingToken: {
       name: StakingTokenName,
       contract: undefined,
       totalSupply: 0,
       isLoading: false,
+      currentCount: 0,
     },
     TokenFarm: {
       name: TokenFarmName,
       contract: undefined,
       totalSupply: 0,
       isLoading: false,
+      currentCount: 0,
     },
   } as web3State,
   reducers: {
@@ -188,9 +206,34 @@ const blockchainSlice: Slice<
           state.RewardToken!.totalSupply = Number(
             Web3.utils.fromWei(value[0], "ether")
           );
+          state.RewardToken!.currentCount = Number(
+            Web3.utils.fromWei(value[1], "ether")
+          );
           state.RewardToken!.isLoading = false;
         } else if (name === StakingTokenName) {
           state.StakingToken!.totalSupply = Number(
+            Web3.utils.fromWei(value[0], "ether")
+          );
+          state.StakingToken!.currentCount = Number(
+            Web3.utils.fromWei(value[1], "ether")
+          );
+          state.StakingToken!.isLoading = false;
+        }
+      }
+    );
+
+    builder.addCase(
+      getAddressTokenCount.fulfilled,
+      (state, action: PayloadAction<KeyValuePair>) => {
+        let { name, value } = action.payload;
+
+        if (name === RewardTokenName) {
+          state.RewardToken!.currentCount = Number(
+            Web3.utils.fromWei(value[0], "ether")
+          );
+          state.RewardToken!.isLoading = false;
+        } else if (name === StakingTokenName) {
+          state.StakingToken!.currentCount = Number(
             Web3.utils.fromWei(value[0], "ether")
           );
           state.StakingToken!.isLoading = false;

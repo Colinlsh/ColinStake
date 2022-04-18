@@ -15,6 +15,7 @@ export interface web3Contract {
   contract: Contract | undefined;
   totalSupply: number;
   isLoading: boolean;
+  currentCount: number;
 }
 
 export interface transactionModel {
