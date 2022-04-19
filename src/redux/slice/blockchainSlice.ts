@@ -10,6 +10,7 @@ import {
   web3State,
   transactionModel,
   getContractModel,
+  stakeTokenModel,
   RewardTokenName,
   StakingTokenName,
   TokenFarmName,
@@ -80,8 +81,13 @@ export const getAddressTokenCount = createAsyncThunk(
   "blockchain/getAddressTokenCount",
   async (transactionModel: transactionModel) => {
     let { contract, from, to, tokenId, value } = transactionModel;
-    let num = await contract.methods.balanceOf(from).call();
     let name = await contract.methods.name().call();
+    let num;
+    if (name !== TokenFarmName) {
+      num = await contract.methods.balanceOf(from).call();
+    } else {
+      num = await contract.methods.stakingBalance(from).call();
+    }
 
     return { name: name, value: [num] } as KeyValuePair;
   }
@@ -98,7 +104,7 @@ export const transferToken = createAsyncThunk(
         Web3.utils.toWei(transferModel.value, "ether")
       )
       .send({ from: transferModel.from });
-    
+
     let _totalSupply = await transferModel.contract.methods
       .totalSupply()
       .call();
@@ -108,6 +114,44 @@ export const transferToken = createAsyncThunk(
       .call();
 
     return { name: name, value: [_totalSupply, _currentCount] } as KeyValuePair;
+  }
+);
+
+export const stakeToken = createAsyncThunk(
+  "blockchain/stakeToken",
+  async (stakeTokenModel: stakeTokenModel) => {
+    let _stakeContract = stakeTokenModel.stakecontract!.contract!;
+    let _tokenFarmContract = stakeTokenModel.tokenFarmcontract!.contract!;
+    try {
+      // approve token farm to withdraw from staketoken contract for that particular address
+      await _stakeContract.methods
+        .approve(
+          stakeTokenModel.tokenFarmcontract.address,
+          Web3.utils.toWei(stakeTokenModel.value, "ether")
+        )
+        .send({ from: stakeTokenModel.owner });
+
+      // token farm contract will take from stake contract
+      await _tokenFarmContract.methods
+        .stakeTokens(Web3.utils.toWei(stakeTokenModel.value, "ether"))
+        .send({
+          from: stakeTokenModel.owner,
+        });
+    } catch (error) {
+      console.log(error);
+    }
+    let stakeTokenAmt = await _stakeContract.methods
+      .balanceOf(stakeTokenModel.owner)
+      .call();
+
+    let tokenFarmTokenAmt = await _tokenFarmContract.methods
+      .stakingBalance(stakeTokenModel.owner)
+      .call();
+
+    return {
+      name: "staketoken",
+      value: [stakeTokenAmt, tokenFarmTokenAmt],
+    } as KeyValuePair;
   }
 );
 
@@ -237,7 +281,26 @@ const blockchainSlice: Slice<
             Web3.utils.fromWei(value[0], "ether")
           );
           state.StakingToken!.isLoading = false;
+        } else if (name === TokenFarmName) {
+          state.TokenFarm!.currentCount = Number(
+            Web3.utils.fromWei(value[0], "ether")
+          );
+          state.TokenFarm!.isLoading = false;
         }
+      }
+    );
+
+    builder.addCase(
+      stakeToken.fulfilled,
+      (state, action: PayloadAction<KeyValuePair>) => {
+        let { name, value } = action.payload;
+
+        state.StakingToken!.currentCount = Number(
+          Web3.utils.fromWei(value[0], "ether")
+        );
+        state.TokenFarm!.currentCount = Number(
+          Web3.utils.fromWei(value[1], "ether")
+        );
       }
     );
   },

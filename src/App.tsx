@@ -4,17 +4,25 @@ import {
   RewardTokenName,
   StakingTokenName,
   TokenFarmName,
+  web3Contract,
   web3State,
 } from "./model/blockchain/blockchainModel";
 import "./App.css";
 import VideoBackground from "./UI/layout/videoBackground";
 import { useDispatch, useSelector } from "react-redux";
-import { getContract, getWeb3 } from "./redux/slice/blockchainSlice";
+import {
+  getContract,
+  getWeb3,
+  setIsLoading,
+  stakeToken,
+  transferToken,
+} from "./redux/slice/blockchainSlice";
 import { RootState } from "./redux/store";
 import { Container, createTheme } from "@mui/material";
 import { ThemeProvider } from "@emotion/react";
 import { ERCContainer } from "./UI/ERCContainer";
 import Navbar from "./UI/Navbar";
+import StakeTokenContainer from "./UI/StakeTokenContainer";
 
 const theme = createTheme();
 
@@ -23,12 +31,6 @@ function App() {
   var dispatch = useDispatch();
   const state = useSelector((state: RootState) => state.blockchain);
   // #endregion
-
-  const [account, setAccount] = useState("");
-  const [ERC20TotalSupply, setERC20TotalSupply] = useState<number>(0);
-  const [ERC721TotalSupply, setERC721TotalSupply] = useState<number>(0);
-  const [web3State, setweb3State] = useState<web3State>();
-  const [hello, setHello] = useState("");
 
   const init = () => {
     dispatch(getWeb3());
@@ -52,6 +54,35 @@ function App() {
         web3: state.web3!,
         contractName: contractName,
       } as getContractModel)
+    );
+  };
+
+  const handleStakeToken = (amount: string) => {
+    dispatch(
+      stakeToken({
+        stakecontract: state.StakingToken!,
+        tokenFarmcontract: state.TokenFarm!,
+        value: amount,
+        owner: state.currentAccount,
+      })
+    );
+  };
+
+  const handleTransfer = (
+    contract: web3Contract,
+    to: string,
+    amount: string
+  ) => {
+    let from = state.currentAccount;
+    dispatch(setIsLoading({ name: contract.name, value: [true] }));
+    dispatch(
+      transferToken({
+        contract: contract.contract!,
+        from: from,
+        to: to,
+        tokenId: "",
+        value: amount,
+      })
     );
   };
 
@@ -89,32 +120,26 @@ function App() {
               name={RewardTokenName}
               isEnable={state.web3 !== undefined}
               contract={state.RewardToken!}
+              handleTransfer={handleTransfer}
             />
-            <ERCContainer
-              name={StakingTokenName}
-              isEnable={state.web3 !== undefined}
-              contract={state.StakingToken!}
-            />
+            <div>
+              <ERCContainer
+                name={StakingTokenName}
+                isEnable={state.web3 !== undefined}
+                contract={state.StakingToken!}
+                handleTransfer={handleTransfer}
+              />
+              <StakeTokenContainer
+                handleStakeToken={handleStakeToken}
+                isEnable={true}
+              />
+            </div>
             <ERCContainer
               name={TokenFarmName}
               isEnable={state.web3 !== undefined}
               contract={state.TokenFarm!}
+              handleTransfer={() => {}}
             />
-            {/* <StakeTokenContainer
-              name="test"
-              handleStakeToken={() => {}}
-              isEnable={true}
-            /> */}
-            {/* <ERCContainer
-              name="ERC20"
-              handleGetContract={() => handleGetContract("erc20")}
-              isEnable={state.web3 !== undefined}
-            />
-            <ERCContainer
-              name="ERC721"
-              handleGetContract={() => handleGetContract("erc721")}
-              isEnable={state.web3 !== undefined}
-            /> */}
           </div>
         </Container>
       </ThemeProvider>

@@ -26,6 +26,13 @@ export interface transactionModel {
   value: any;
 }
 
+export interface stakeTokenModel {
+  stakecontract: web3Contract;
+  tokenFarmcontract: web3Contract;
+  owner: string;
+  value: any;
+}
+
 export interface getContractModel {
   web3: Web3;
   contractName: string;

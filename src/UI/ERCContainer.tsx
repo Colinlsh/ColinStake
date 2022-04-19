@@ -3,13 +3,12 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   KeyValuePair,
+  TokenFarmName,
   web3Contract,
 } from "../model/blockchain/blockchainModel";
 import {
   getAddressTokenCount,
-  getContractTotalSupply,
   setIsLoading,
-  transferToken,
 } from "../redux/slice/blockchainSlice";
 import { RootState } from "../redux/store";
 
@@ -17,12 +16,14 @@ interface ERCContainerProps {
   name: string;
   isEnable: boolean;
   contract: web3Contract;
+  handleTransfer: (contract: web3Contract, to: string, amount: string) => void;
 }
 
 export const ERCContainer: React.FC<ERCContainerProps> = ({
   name = "",
   isEnable = true,
   contract,
+  handleTransfer,
 }) => {
   // #region Redux
   var dispatch = useDispatch();
@@ -30,22 +31,6 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
   const [toAddress, setToAddress] = useState("");
   const [amount, setAmount] = useState("");
   // #endregion
-
-  const handleTransfer = (to: string, amount: string) => {
-    let from = state.currentAccount;
-    dispatch(
-      setIsLoading({ name: contract.name, value: [true] } as KeyValuePair)
-    );
-    dispatch(
-      transferToken({
-        contract: contract.contract!,
-        from: from,
-        to: to,
-        tokenId: "",
-        value: amount,
-      })
-    );
-  };
 
   const handleAmountChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -80,7 +65,6 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
   return (
     <div
       style={{
-        width: "50%",
         display: "flex",
         alignItems: "center",
         flexDirection: "column",
@@ -104,33 +88,39 @@ export const ERCContainer: React.FC<ERCContainerProps> = ({
       ) : (
         <div style={{ fontSize: "4rem" }}>{contract.currentCount}</div>
       )}
-      <TextField
-        style={{ background: "aliceblue", marginBottom: "1rem" }}
-        label="To Address"
-        variant="filled"
-        onChange={(e) => setToAddress(e.target.value)}
-      />
-      <Divider
-        variant="middle"
-        style={{ backgroundColor: "aliceblue", width: "100%" }}
-      />
-      <TextField
-        style={{ background: "aliceblue", margin: "1rem 0" }}
-        label="Amount"
-        variant="filled"
-        onChange={(e) => handleAmountChange(e)}
-      />
-      <div>
-        <Button
-          color="secondary"
-          variant="contained"
-          sx={{ mt: 3, mb: 3, mr: 1 }}
-          style={{ backgroundColor: "#21b6ae" }}
-          onClick={() => handleTransfer(toAddress, amount)}
-        >
-          Transfer
-        </Button>
-      </div>
+      {name !== TokenFarmName ? (
+        <>
+          <TextField
+            style={{ background: "aliceblue", marginBottom: "1rem" }}
+            label="To Address"
+            variant="filled"
+            onChange={(e) => setToAddress(e.target.value)}
+          />
+          <Divider
+            variant="middle"
+            style={{ backgroundColor: "aliceblue", width: "100%" }}
+          />
+          <TextField
+            style={{ background: "aliceblue", margin: "1rem 0" }}
+            label="Amount"
+            variant="filled"
+            onChange={(e) => handleAmountChange(e)}
+          />
+          <div>
+            <Button
+              color="secondary"
+              variant="contained"
+              sx={{ mt: 3, mb: 3, mr: 1 }}
+              style={{ backgroundColor: "#21b6ae" }}
+              onClick={() => handleTransfer(contract, toAddress, amount)}
+            >
+              Transfer
+            </Button>
+          </div>
+        </>
+      ) : (
+        <></>
+      )}
     </div>
   );
 };
