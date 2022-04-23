@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 const assert = require("assert");
+const { debug } = require("console");
 const web3 = require("web3");
 
 const StakeToken = artifacts.require("StakingToken");
@@ -57,7 +58,7 @@ contract("TokenFarm", (accounts) => {
     const instance = await TokenFarm.deployed();
     const name = await instance.name.call();
     console.log(`Name: ${name}`);
-    assert(name === "Colin Token Farm", "empty");
+    assert(name === "TokenFarm", "empty");
   });
 
   it("should get 300 tokens from contract", async () => {
@@ -192,17 +193,37 @@ contract("TokenFarm", (accounts) => {
     );
   });
 
-  // it("should return correct yield time", async () => {
-  //   // get start time
-  //   let _starttime = await _tokenFarm.startTime(staker1);
-  //   let datetime = new Date(_starttime * 1000);
-  //   let normalDate = new Date(_starttime * 1000).toLocaleString("en-GB", {
-  //     timeZone: "GMT",
-  //   });
-  //   console.log(`Staker1 Staking starttime: ${datetime}`);
-  //   console.log(`Staker1 Staking starttime: ${normalDate}`);
-  //   console.log(`Staker1 Staking starttime: ${_starttime}`);
+  // test withdraw yield
+  it("should be able to get staker1 expected yield reward at given time", async () => {
+    var _isStaking = await _tokenFarm.isStaking(staker1);
+    console.log(`Staker1 isStaking: ${_isStaking}`);
+    assert(_isStaking === true, "staker1 is not staking");
 
-  //   // calculate stake yield
-  // });
+    await _tokenFarm.generateExpectedYield({ from: staker1 });
+
+    let _yield = await _tokenFarm.expectedYield(staker1);
+    console.log(`Yield: ${web3.utils.fromWei(_yield)}`);
+
+    assert(
+      Number(web3.utils.fromWei(_yield)) > 0,
+      "there should be more than 0 reward"
+    );
+  });
+
+  // test withdraw yield
+  it("should be able to get staker0 expected yield reward at given time", async () => {
+    let _isStaking = await _tokenFarm.isStaking(staker0);
+    console.log(`Staker0 isStaking: ${_isStaking}`);
+    assert(_isStaking === true, "Staker0 is not staking");
+
+    await _tokenFarm.generateExpectedYield({ from: staker0 });
+
+    let _yield = await _tokenFarm.expectedYield(staker0);
+    console.log(`Yield: ${web3.utils.fromWei(_yield)}`);
+
+    assert(
+      Number(web3.utils.fromWei(_yield)) > 0,
+      "there should be more than 0 reward"
+    );
+  });
 });

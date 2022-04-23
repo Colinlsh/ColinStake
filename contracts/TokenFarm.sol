@@ -9,7 +9,7 @@ contract TokenFarm {
 	string public name = "TokenFarm";
 	address public owner;
 	StakingToken public stakingToken;
-	RewardToken public rewardToken;	
+	RewardToken public rewardToken;
 
 	address[] public stakers;
 
@@ -21,6 +21,9 @@ contract TokenFarm {
 	// userAddress => timeStamp
     mapping(address => uint256) public startTime;
 
+    // expected yields
+    mapping(address => uint256) public expectedYield;
+
 	// userAddress => rewardTokenBalance
     mapping(address => uint256) public rewardTokenBalance;
 
@@ -28,6 +31,7 @@ contract TokenFarm {
     event Stake(address indexed from, uint256 amount);
     event Unstake(address indexed from, uint256 amount);
     event YieldWithdraw(address indexed to, uint256 amount);
+    event ExpectedYield(address indexed from, uint256 amount);
     event ConsoleLog(address indexed from, string message);
 
 	constructor(StakingToken _stakingToken, RewardToken _rewardToken) {
@@ -105,7 +109,15 @@ contract TokenFarm {
 		// mint new token for user
         rewardToken.mint(msg.sender, toTransfer);
         emit YieldWithdraw(msg.sender, toTransfer);
-    } 
+    }
+
+    // this will enable user to know how much has been earned if they unstake now
+    function generateExpectedYield() public {
+        require(isStaking[msg.sender] == true, "only staking user can check");
+        uint256 _yield = calculateYieldTotal(msg.sender);
+        expectedYield[msg.sender] += _yield;
+        emit ExpectedYield(msg.sender, _yield);
+    }
 
 	function calculateYieldTime(address user) internal view returns(uint256) {
         uint256 end = block.timestamp;

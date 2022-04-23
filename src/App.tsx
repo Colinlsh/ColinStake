@@ -12,10 +12,13 @@ import VideoBackground from "./UI/layout/videoBackground";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getContract,
+  generateExpectedYield,
   getWeb3,
   setIsLoading,
   stakeToken,
   transferToken,
+  unstakeToken,
+  withdrawYield,
 } from "./redux/slice/blockchainSlice";
 import { RootState } from "./redux/store";
 import { Container, createTheme } from "@mui/material";
@@ -62,8 +65,45 @@ function App() {
       stakeToken({
         stakecontract: state.StakingToken!,
         tokenFarmcontract: state.TokenFarm!,
+        rewardcontract: state.RewardToken!,
         value: amount,
         owner: state.currentAccount,
+      })
+    );
+  };
+
+  const handleUnstakeToken = (amount: string) => {
+    dispatch(
+      unstakeToken({
+        stakecontract: state.StakingToken!,
+        tokenFarmcontract: state.TokenFarm!,
+        rewardcontract: state.RewardToken!,
+        value: amount,
+        owner: state.currentAccount,
+      })
+    );
+  };
+
+  const handleWithdrawYield = () => {
+    dispatch(
+      withdrawYield({
+        stakecontract: state.StakingToken!,
+        tokenFarmcontract: state.TokenFarm!,
+        rewardcontract: state.RewardToken!,
+        value: "",
+        owner: state.currentAccount,
+      })
+    );
+  };
+
+  const handleGetExpectedYield = () => {
+    dispatch(
+      generateExpectedYield({
+        from: state.currentAccount,
+        contract: state.TokenFarm!.contract!,
+        to: "",
+        tokenId: "",
+        value: "",
       })
     );
   };
@@ -131,6 +171,9 @@ function App() {
               />
               <StakeTokenContainer
                 handleStakeToken={handleStakeToken}
+                handleUnstakeToken={handleUnstakeToken}
+                handleWithdrawYield={handleWithdrawYield}
+                handleGetExpectedYield={handleGetExpectedYield}
                 isEnable={true}
               />
             </div>

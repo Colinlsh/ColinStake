@@ -155,6 +155,96 @@ export const stakeToken = createAsyncThunk(
   }
 );
 
+export const unstakeToken = createAsyncThunk(
+  "blockchain/unstakeToken",
+  async (stakeTokenModel: stakeTokenModel) => {
+    let _stakeContract = stakeTokenModel.stakecontract!.contract!;
+    let _rewardContract = stakeTokenModel.rewardcontract!.contract!;
+    let _tokenFarmContract = stakeTokenModel.tokenFarmcontract!.contract!;
+    try {
+      // unstake token
+      await _tokenFarmContract.methods
+        .unstakeTokens(Web3.utils.toWei(stakeTokenModel.value, "ether"))
+        .send({
+          from: stakeTokenModel.owner,
+        });
+    } catch (error) {
+      console.log(error);
+    }
+    let stakeTokenAmt = await _stakeContract.methods
+      .balanceOf(stakeTokenModel.owner)
+      .call();
+
+    let tokenFarmTokenAmt = await _tokenFarmContract.methods
+      .stakingBalance(stakeTokenModel.owner)
+      .call();
+
+    let _yield = await _tokenFarmContract.methods
+      .rewardTokenBalance(stakeTokenModel.owner)
+      .call();
+
+    return {
+      name: "unstaketoken",
+      value: [stakeTokenAmt, _yield, tokenFarmTokenAmt],
+    } as KeyValuePair;
+  }
+);
+
+export const withdrawYield = createAsyncThunk(
+  "blockchain/withdrawYield",
+  async (stakeTokenModel: stakeTokenModel) => {
+    let _stakeContract = stakeTokenModel.stakecontract!.contract!;
+    let _rewardContract = stakeTokenModel.rewardcontract!.contract!;
+    let _tokenFarmContract = stakeTokenModel.tokenFarmcontract!.contract!;
+    try {
+      await _tokenFarmContract.methods.withdrawYield().send({
+        from: stakeTokenModel.owner,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+    let stakeTokenAmt = await _stakeContract.methods
+      .balanceOf(stakeTokenModel.owner)
+      .call();
+
+    let rewardTokenAmt = await _rewardContract.methods
+      .balanceOf(stakeTokenModel.owner)
+      .call();
+
+    let _yield = await _tokenFarmContract.methods
+      .rewardTokenBalance(stakeTokenModel.owner)
+      .call();
+
+    return {
+      name: "withdrawYield",
+      value: [stakeTokenAmt, rewardTokenAmt, _yield],
+    } as KeyValuePair;
+  }
+);
+
+export const generateExpectedYield = createAsyncThunk(
+  "blockchain/generateExpectedYield",
+  async (transferModel: transactionModel) => {
+    let name, _yield;
+    try {
+      name = await transferModel.contract.methods.name().call();
+
+      // trigger to calculate expected yield
+      await transferModel.contract.methods
+        .generateExpectedYield()
+        .send({ from: transferModel.from });
+
+      // get expected yield
+      _yield = await transferModel.contract.methods
+        .expectedYield(transferModel.from)
+        .call();
+    } catch (error) {
+      console.log(error);
+    }
+    return { name: name, value: [_yield] } as KeyValuePair;
+  }
+);
+
 const blockchainSlice: Slice<
   web3State,
   SliceCaseReducers<web3State>,
@@ -185,6 +275,9 @@ const blockchainSlice: Slice<
       isLoading: false,
       currentCount: 0,
     },
+    stakingAmount: 0,
+    yield: 0,
+    expectedYield: 0,
   } as web3State,
   reducers: {
     setAccount: (state, action) => {
@@ -301,6 +394,48 @@ const blockchainSlice: Slice<
         state.TokenFarm!.currentCount = Number(
           Web3.utils.fromWei(value[1], "ether")
         );
+      }
+    );
+
+    builder.addCase(
+      unstakeToken.fulfilled,
+      (state, action: PayloadAction<KeyValuePair>) => {
+        let { name, value } = action.payload;
+
+        state.StakingToken!.currentCount = Number(
+          Web3.utils.fromWei(value[0], "ether")
+        );
+
+        state.yield = Number(Web3.utils.fromWei(value[1], "ether"));
+
+        state.TokenFarm!.currentCount = Number(
+          Web3.utils.fromWei(value[2], "ether")
+        );
+      }
+    );
+
+    builder.addCase(
+      withdrawYield.fulfilled,
+      (state, action: PayloadAction<KeyValuePair>) => {
+        let { name, value } = action.payload;
+
+        state.StakingToken!.currentCount = Number(
+          Web3.utils.fromWei(value[0], "ether")
+        );
+        state.RewardToken!.currentCount = Number(
+          Web3.utils.fromWei(value[1], "ether")
+        );
+
+        state.yield = Number(Web3.utils.fromWei(value[2], "ether"));
+      }
+    );
+
+    builder.addCase(
+      generateExpectedYield.fulfilled,
+      (state, action: PayloadAction<KeyValuePair>) => {
+        let { name, value } = action.payload;
+
+        state.expectedYield = Number(Web3.utils.fromWei(value[0], "ether"));
       }
     );
   },

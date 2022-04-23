@@ -7,6 +7,9 @@ export interface web3State {
   RewardToken: web3Contract | undefined;
   StakingToken: web3Contract | undefined;
   TokenFarm: web3Contract | undefined;
+  stakingAmount: number;
+  yield: number;
+  expectedYield: number;
 }
 
 export interface web3Contract {
@@ -29,6 +32,7 @@ export interface transactionModel {
 export interface stakeTokenModel {
   stakecontract: web3Contract;
   tokenFarmcontract: web3Contract;
+  rewardcontract: web3Contract;
   owner: string;
   value: any;
 }
